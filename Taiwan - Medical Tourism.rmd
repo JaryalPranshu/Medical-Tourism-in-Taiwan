@@ -363,3 +363,7 @@ p-value < 0.05. So, we conclude that there's a significant increase in number of
 
 Finally, we can say that we can invest in this market for all countries except Mainland China. We must however, look into Southeast Asia slightly different as the rise was significant for the years 2012, 2013, 2014, 2015 and not significant thereafter.
 
+#The Tableau workbook for further zeroing down on location for hotel is: https://public.tableau.com/profile/akshata.bodhankar#!/vizhome/TaiwanMedicalDataAnalysis/InboundTourists
+
+#Separate analysis on what to hotel's specifics should be will need to be done
+

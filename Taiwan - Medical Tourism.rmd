@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## Load data and packages
+#This data was downloaded from kaggle
 
 ```{r read data and load packages}
 

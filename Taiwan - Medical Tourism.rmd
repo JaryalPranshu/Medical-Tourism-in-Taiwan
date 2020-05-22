@@ -1,0 +1,364 @@
+---
+title: "Medical Tourism"
+author: "Akshata Bodhankar"
+date: "3/2/2020"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load data and packages
+
+```{r read data and load packages}
+
+purpose <- read.csv("C:\\Users\\aksha\\Documents\\Medical Tourism\\purpose.csv")
+library(ggplot2)
+library(dplyr)
+
+```
+
+## Analysis for all countries except "Mainland China", "Others, Southeast Asia" and "HongKong. Macao"
+
+```{r load data1}
+
+purpose1 <- purpose
+purpose1 <- purpose1 %>% select(Residence, Period, Medical.Treatment) %>% filter(Residence
+                                                                                 != c("Mainland China", "Others, Southeast Asia", "HongKong. Macao"))
+head(purpose1)
+
+```
+
+We have selected the columns Residence (name of the country), Period (Month and year that there were tourists in) and Medical.Treatment (number of tourists for medical purposes). The table shows first 6 rows.
+
+## Normality test and transformation - excluded "Mainland China", "Others, Southeast Asia" and "HongKong. Macao"
+
+We would like to find if it's worthwhile to invest in this market. So, we want to see if the number of tourists are increasing year on year. Before we proceed with this, we must check if the data is normally distributed or not so that relevant hypothesis test can be applied.
+
+For this purpose, we use shapiro test.
+H0: Data is normally distributed
+Ha: Data is not normally distributed
+
+For a p-value < 0.05, we reject the null hypothesis and conclude that the data is not normally distributed. If p-value >= 0.05 then we fail to reject the null hypothesis and conclude that the data is normally distributed.
+
+```{r normality test1}
+
+attach(purpose1)
+shapiro.test(Medical.Treatment)
+
+```
+
+Since the p-value < 0.05, we can conclude that the data is not normally distributed. We can however, tranform data using: log, square root or sine inverse transformation. Additionally we perform shapiro test over the transformed data to confirm if the transformation has in fact normalized the data.
+
+```{r transformation1}
+
+purpose1$Medical.Transformed <- log(Medical.Treatment)
+shapiro.test(purpose1$Medical.Transformed)
+
+purpose1$Medical.Transformed <- sqrt(Medical.Treatment)
+shapiro.test(purpose1$Medical.Transformed)
+
+purpose1$Medical.Transformed <- asin(sqrt(Medical.Treatment))
+shapiro.test(purpose1$Medical.Transformed)
+
+```
+
+The column Medical.Treatment contains 0s. Hence, log transformation cannot be used.
+
+Square root transformation gives p-value < 0.05 confirming that this transformation hasn't normalized the data and the same goes for sine inverse transformation.
+
+Hence, t test cannot be sued for further analysis. We also notice that the data isn't paired. Hence, we must use Wilcoxson Rank Sum test.
+
+## Hypothesis testing - excluded "Mainland China", "Others, Southeast Asia" and "HongKong. Macao"
+
+We want to see if there's any increase in populations travelling to Taiwan in 2 separate years. This is done for every pair of consecutive years.
+
+Let's take 2 consecutive years for starters 2016 and 2017. 
+The null hypothesis is that there's no increase H0: f(x) <= f(y) i.e., 2017 is to the left of 2016
+Alternate hypothesis is that there's an increase Ha: f(x) > f(y) i.e., 2017 is to the right of 2016
+
+p-value < 0.05 indicates that the there's a significant increase in incoming tourists
+
+```{r hypothesis testing1a}
+
+Period<-as.character(Period)
+
+y2012 <- filter(purpose1, grepl("2012",Period))
+y2013 <- filter(purpose1, grepl("2013",Period))
+y2014 <- filter(purpose1, grepl("2014",Period))
+y2015 <- filter(purpose1, grepl("2015",Period))
+y2016 <- filter(purpose1, grepl("2016",Period))
+y2017 <- filter(purpose1, grepl("2017",Period))
+
+wilcox.test(y2013$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2014$Medical.Treatment, y2013$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2015$Medical.Treatment, y2014$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2016$Medical.Treatment, y2015$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2017$Medical.Treatment, y2016$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+In all combinations of consecutive years, p-value > 0.05. Hence, the increase in number of incoming tourists for medical purposes is not significant.
+
+Let's check if it has significantly increased in a span of 5 years.
+
+```{r hypothesis testing1b}
+
+wilcox.test(y2017$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+p-value < 0.05. Yes, there's a significant increase in number of tourists for medical purpose. It's worthwhile to invest in this business for all countries other than "Mainland China", "Others, Southeast Asia" and "HongKong. Macao".
+
+## Analysis for "Mainland China"
+
+```{r select data2}
+
+purpose2 <- purpose
+purpose2 <- purpose2 %>% select(Residence, Period, Medical.Treatment) %>% filter(Residence
+                                                                                 == "Mainland China")
+head(purpose2)
+
+```
+
+The table displays first 6 rows of table with tourists from Mainland China only.
+
+## Normality test and Transformation - selected "Mainland China"
+
+H0: Data is normally distributed
+Ha: Data is not normally distriuted
+
+If p-value < 0.05 then we reject the null hypothesis
+
+```{r normality test2}
+
+attach(purpose2)
+shapiro.test(Medical.Treatment)
+
+```
+
+P-value < 0.05. Hence, we reject the null hypothesis and confirm that the data is not normally distributed and must be transformed. 
+
+```{r transformation2}
+
+purpose2$Medical.Transformed <- log(Medical.Treatment)
+shapiro.test(purpose2$Medical.Transformed)
+
+purpose2$Medical.Transformed <- sqrt(Medical.Treatment)
+shapiro.test(purpose2$Medical.Transformed)
+
+```
+
+None of the transformations are resulting in nromality being proved.
+
+We didn't perform that sine inverse transformation because all the x values are identical.
+
+## Hypothesis testing - selected "Mainland China"
+
+Again performing year on year test first. 
+
+The null hypothesis is that there's no increase H0: f(x) <= f(y) for example, 2017 is to the left of 2016
+Alternate hypothesis is that there's an increase Ha: f(x) > f(y) 2017 is to the right of 2016
+
+If p-value < 0.05 then we reject the null hypothesis
+
+```{r hypothesis testing2a}
+
+Period<-as.character(Period)
+
+y2012 <- filter(purpose2, grepl("2012",Period))
+y2013 <- filter(purpose2, grepl("2013",Period))
+y2014 <- filter(purpose2, grepl("2014",Period))
+y2015 <- filter(purpose2, grepl("2015",Period))
+y2016 <- filter(purpose2, grepl("2016",Period))
+y2017 <- filter(purpose2, grepl("2017",Period))
+
+wilcox.test(y2013$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2014$Medical.Treatment, y2013$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2015$Medical.Treatment, y2014$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2016$Medical.Treatment, y2015$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2017$Medical.Treatment, y2016$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+There's a significant increase in number of tourists from Mainland China from 2012 to 2013. But, for the rest of the years, the increase in number of incoming tourists for the medical purpose is not significant.
+
+Let's check if it has significantly increased in a span of 5 years.
+
+```{r hypothesis testing2b}
+
+wilcox.test(y2017$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+Since, p-value > 0.05, we fail to reject the null and conclude that there's no significant increase in number of tourists for medical purpose. It's not worthwhile to invest in this business for "Mainland China".
+
+## Analysing for "Others, Southeast Asia"
+
+```{r select data3}
+
+purpose3 <- purpose
+purpose3 <- purpose3 %>% select(Residence, Period, Medical.Treatment) %>% filter(Residence
+                                                                                 == "Others, Southeast Asia")
+head(purpose3)
+
+```
+
+The table shows first 6 rows for Others, Southeast Asia.
+
+## Normality test and transformation - selected "Others, Southeast Asia"
+
+Performing shapiro test.
+
+H0: Data is normally distributed
+Ha: Data is not normally distributed
+
+If p-value < 0.05, we reject the null hypothesis.
+
+```{r normality test3}
+
+attach(purpose3)
+shapiro.test(Medical.Treatment)
+
+```
+
+Since, p-value < 0.05, we conclude that the data is not normally distributed. Hence, we transform to performt he test again.
+
+```{r transformation3}
+
+purpose3$Medical.Transformed <- log(Medical.Treatment)
+shapiro.test(purpose3$Medical.Transformed)
+
+purpose3$Medical.Transformed <- sqrt(Medical.Treatment)
+shapiro.test(purpose3$Medical.Transformed)
+
+purpose3$Medical.Transformed <- asin(sqrt(Medical.Treatment))
+shapiro.test(purpose3$Medical.Transformed)
+
+```
+
+Both Square root and sine inverse transformation have p-value < 0.05, rejecting the null and concluding that the data is not normally distributed. We must proceed to use Wilcoxson Rank Sum Test.
+
+## Hypothesis testing - selected "Others, Southeast Asia"
+
+The null hypothesis is that there's no increase H0: f(x) <= f(y) for example, 2017 is to the left of 2016
+Alternate hypothesis is that there's an increase Ha: f(x) > f(y) 2017 is to the right of 2016
+
+```{r hypothesis testing3a}
+
+Period<-as.character(Period)
+
+y2012 <- filter(purpose3, grepl("2012",Period))
+y2013 <- filter(purpose3, grepl("2013",Period))
+y2014 <- filter(purpose3, grepl("2014",Period))
+y2015 <- filter(purpose3, grepl("2015",Period))
+y2016 <- filter(purpose3, grepl("2016",Period))
+y2017 <- filter(purpose3, grepl("2017",Period))
+
+wilcox.test(y2013$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2014$Medical.Treatment, y2013$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2015$Medical.Treatment, y2014$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2016$Medical.Treatment, y2015$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2017$Medical.Treatment, y2016$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+Since p-value < 0.05 for the first 3 tests, we conclude that there has been significant increase in the number of tourists for the purpose of medical treatment from "Others, Southeast Asia" from the years 2012 to 2013, 2013 to 2014 and 2014 to 2015. The rise has not been significant thereafter.
+
+Let's check if it has significantly increased in a span of 5 years.
+
+```{r hypothesis testing3b}
+
+wilcox.test(y2017$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+p-value < 0.05. Yes, there's a significant increase in number of tourists for medical purpose. We will however, have to dig deeper to understand the reason for why tourists' increase isn't significant in the later years. Until that is done no judgement can be made on whether it will be successful to invest in this market with respect to "Others, Southeast Asia".
+
+## Analysis for "HongKong. Macao"
+
+```{r select data 4}
+
+purpose4 <- purpose
+purpose4 <- purpose4 %>% select(Residence, Period, Medical.Treatment) %>% filter(Residence
+                                                                                 == "HongKong. Macao")
+head(purpose4)
+
+```
+
+The table shows first 6 rows from table for HongKong Macao.
+
+## Normality test transformation - selected "HongKong. Macao"
+
+Testing if data for HongKong Macao is normal or not using shapiro test.
+
+H0: Data is normal
+Ha: Data is not normal
+
+```{r test normality4}
+
+attach(purpose4)
+shapiro.test(Medical.Treatment)
+
+```
+
+p-value < 0.05. Hence we reject the null hypothesis and conclude that data is not normal. We now transform data and test for normality again.
+
+```{r transformation4}
+
+purpose4$Medical.Transformed <- log(Medical.Treatment)
+shapiro.test(purpose4$Medical.Transformed)
+
+purpose4$Medical.Transformed <- sqrt(Medical.Treatment)
+shapiro.test(purpose4$Medical.Transformed)
+
+summary(Medical.Treatment)
+```
+
+All x values after transformation using sine inverse are identical. Hence, we aren't going to perform that test.
+
+However, after transformation too, we still conclude that the data is not normal. Hence, we must perform Wilcoxson Rank Sum Test for testing for significant increase in tourists.
+
+## Hypothesis testing - selected "HongKong. Macao"
+
+The null hypothesis is that there's no increase H0: f(x) <= f(y) for example, 2017 is to the left of 2016
+Alternate hypothesis is that there's an increase Ha: f(x) > f(y) 2017 is to the right if 2016
+
+If p-value < 0.05, we reject the null hypothesis.
+
+```{r hypothesis testing4a}
+
+Period<-as.character(Period)
+
+y2012 <- filter(purpose1, grepl("2012",Period))
+y2013 <- filter(purpose1, grepl("2013",Period))
+y2014 <- filter(purpose1, grepl("2014",Period))
+y2015 <- filter(purpose1, grepl("2015",Period))
+y2016 <- filter(purpose1, grepl("2016",Period))
+y2017 <- filter(purpose1, grepl("2017",Period))
+
+wilcox.test(y2013$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2014$Medical.Treatment, y2013$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2015$Medical.Treatment, y2014$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2016$Medical.Treatment, y2015$Medical.Treatment, mu = 0, alternative = "greater")
+wilcox.test(y2017$Medical.Treatment, y2016$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+In each of the above tests, p-value > 0.05 and we fail to reject the null hypothesis. Hence, the increase in number of incoming tourists for the medical purpose is not significant.
+
+Let's check if it has significantly increased in a span of 5 years.
+
+```{r hypothesis testing4b}
+
+wilcox.test(y2017$Medical.Treatment, y2012$Medical.Treatment, mu = 0, alternative = "greater")
+
+```
+
+p-value < 0.05. So, we conclude that there's a significant increase in number of tourists for medical purpose. It's worthwhile to invest in this business for "HongKong. Macao" too.
+
+Finally, we can say that we can invest in this market for all countries except Mainland China. We must however, look into Southeast Asia slightly different as the rise was significant for the years 2012, 2013, 2014, 2015 and not significant thereafter.
+
